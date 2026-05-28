@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="每日一句">
+<meta name="theme-color" content="#1a1a2e">
+<title>每日一句</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --card2: #16213e;
+    --accent-pos: #e8c97e;
+    --accent-neg: #7ec8e8;
+    --text: #f0ece2;
+    --text-dim: #8a8a9a;
+    --border: rgba(255,255,255,0.08);
+    --shadow: 0 20px 60px rgba(0,0,0,0.5);
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Ambient background blobs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #e8c97e, transparent);
+    top: -100px; right: -100px;
+  }
+  body::after {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, #7ec8e8, transparent);
+    bottom: 0; left: -80px;
+  }
+
+  .wrap { width: 100%; max-width: 480px; position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .app-name {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+  }
+  .date-chip {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.06);
+    padding: 5px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Main card */
+  .main-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 28px 28px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.5s cubic-bezier(0.23,1,0.32,1) both;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(24px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .energy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+  .energy-badge.pos { background: rgba(232,201,126,0.15); color: var(--accent-pos); border: 1px solid rgba(232,201,126,0.25); }
+  .energy-badge.neg { background: rgba(126,200,232,0.15); color: var(--accent-neg); border: 1px solid rgba(126,200,232,0.25); }
+  .energy-badge::before { content: ''; width:6px; height:6px; border-radius:50%; background: currentColor; }
+
+  .quote-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  .quote-text {
+    font-family: 'Noto Serif TC', serif;
+    font-size: clamp(1.25rem, 5vw, 1.6rem);
+    font-weight: 700;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 20px;
+    word-break: break-all;
+  }
+
+  .quote-author {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    text-align: right;
+    font-style: italic;
+  }
+
+  /* Decorative corner */
+  .main-card::after {
+    content: '❝';
+    position: absolute;
+    top: 16px; right: 22px;
+    font-size: 4rem;
+    opacity: 0.05;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+
+  /* Buttons row */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px 10px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.96); opacity: 0.85; }
+  .btn-random {
+    background: linear-gradient(135deg, #e8c97e 0%, #d4a843 100%);
+    color: #1a1200;
+    box-shadow: 0 4px 20px rgba(232,201,126,0.3);
+  }
+  .btn-add {
+    background: rgba(255,255,255,0.07);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  /* Add form */
+  .add-form {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    display: none;
+    animation: slideUp 0.35s cubic-bezier(0.23,1,0.32,1) both;
+  }
+  .add-form.open { display: block; }
+
+  textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.9rem;
+    padding: 14px;
+    resize: none;
+    height: 90px;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: rgba(232,201,126,0.4); }
+  textarea::placeholder { color: var(--text-dim); }
+
+  .energy-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .toggle-btn {
+    flex: 1;
+    padding: 9px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .toggle-btn.active-pos { background: rgba(232,201,126,0.15); color: var(--accent-pos); border-color: rgba(232,201,126,0.3); }
+  .toggle-btn.active-neg { background: rgba(126,200,232,0.15); color: var(--accent-neg); border-color: rgba(126,200,232,0.3); }
+
+  .form-actions { display: flex; gap: 8px; }
+  .btn-save {
+    flex: 1;
+    padding: 12px;
+    background: linear-gradient(135deg, #e8c97e, #d4a843);
+    color: #1a1200;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .btn-save:active { transform: scale(0.96); }
+  .btn-cancel {
+    padding: 12px 18px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  /* Quote list */
+  .quote-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+
+  .quote-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 16px 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    animation: slideUp 0.3s cubic-bezier(0.23,1,0.32,1) both;
+  }
+  .quote-item-bar {
+    width: 3px;
+    min-height: 100%;
+    border-radius: 3px;
+    flex-shrink: 0;
+    align-self: stretch;
+  }
+  .bar-pos { background: var(--accent-pos); }
+  .bar-neg { background: var(--accent-neg); }
+
+  .quote-item-body { flex: 1; }
+  .quote-item-text {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--text);
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+  .quote-item-meta {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+  .btn-delete {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    margin-top: -2px;
+  }
+  .btn-delete:hover { color: #e87e7e; background: rgba(232,126,126,0.1); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(40,40,60,0.95);
+    color: var(--text);
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    border: 1px solid var(--border);
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    white-space: nowrap;
+    backdrop-filter: blur(10px);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Install hint */
+  .install-hint {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-top: 8px;
+    letter-spacing: 0.05em;
+    line-height: 1.7;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 3px;
+    margin-bottom: 16px;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    cursor: pointer;
+    border-radius: 9px;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .tab.active {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    padding: 30px;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="app-name">每 日 一 句</div>
+    <div class="date-chip" id="dateChip"></div>
+  </header>
+
+  <!-- Today's quote -->
+  <div class="main-card" id="mainCard">
+    <div class="energy-badge" id="energyBadge"></div>
+    <div class="quote-label">今 日 語 錄</div>
+    <div class="quote-text" id="quoteText"></div>
+    <div class="quote-author" id="quoteAuthor"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-random" onclick="drawRandom()">🎲 再抽一句</button>
+    <button class="btn btn-add" onclick="toggleForm()">✏️ 新增句子</button>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-form" id="addForm">
+    <textarea id="newQuoteText" placeholder="輸入你的句子…"></textarea>
+    <div class="energy-toggle">
+      <button class="toggle-btn active-pos" id="togglePos" onclick="selectEnergy('pos')">☀️ 正能量</button>
+      <button class="toggle-btn" id="toggleNeg" onclick="selectEnergy('neg')">🌧 負能量</button>
+    </div>
+    <div class="form-actions">
+      <button class="btn-save" onclick="saveQuote()">儲存</button>
+      <button class="btn-cancel" onclick="toggleForm()">取消</button>
+    </div>
+  </div>
+
+  <!-- Tabs: builtin / custom -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('builtin')">內建語錄</button>
+    <button class="tab" onclick="switchTab('custom')">我的語錄</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-builtin">
+    <div class="quote-list" id="builtinList"></div>
+  </div>
+  <div class="tab-panel" id="panel-custom">
+    <div class="quote-list" id="customList"></div>
+  </div>
+
+  <div class="install-hint">💡 在瀏覽器選單選「加入主畫面」，即可像 App 一樣使用</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Built-in quotes ──────────────────────────────────────────────────
+const BUILTIN = [
+  { text: "生命不是要等待暴風雨過去，而是要學會在雨中起舞。", energy: "pos", author: "佚名" },
+  { text: "每一個清晨都是全新的機會，別讓昨天的失敗影響今天的你。", energy: "pos", author: "佚名" },
+  { text: "你比你想像的還要強大，只是你還沒發現。", energy: "pos", author: "佚名" },
+  { text: "成功不是終點，失敗也不是終結，重要的是繼續前進的勇氣。", energy: "pos", author: "邱吉爾" },
+  { text: "即使是最漫長的旅途，也是從第一步開始的。", energy: "pos", author: "老子" },
+  { text: "把時間花在讓你成長的事情上，而不是讓你舒適的事情上。", energy: "pos", author: "佚名" },
+  { text: "你不需要很厲害才能開始，但你需要開始才能很厲害。", energy: "pos", author: "佚名" },
+  { text: "有些人消失在你的生命中，是因為他們的章節已經寫完了。", energy: "neg", author: "佚名" },
+  { text: "你永遠無法讓每個人都滿意，所以先讓自己滿意吧。", energy: "neg", author: "佚名" },
+  { text: "有時候，最深的疲憊不是身體上的，而是一直假裝還好。", energy: "neg", author: "佚名" },
+  { text: "並非每段關係都值得挽留，放手也是一種愛自己。", energy: "neg", author: "佚名" },
+  { text: "接受不完美的自己，才是真正的成熟。", energy: "neg", author: "佚名" },
+  { text: "有些夢不是用來實現的，而是用來讓你知道自己想要什麼。", energy: "neg", author: "佚名" },
+  { text: "眼淚不是軟弱，而是你曾經努力過的證明。", energy: "neg", author: "佚名" },
+  { text: "不是所有努力都有回報，但沒有努力一定沒有回報。", energy: "pos", author: "佚名" },
+];
+
+// ── Storage helpers ──────────────────────────────────────────────────
+const STORAGE_KEY = 'dailyQuote_custom';
+const RANDOM_KEY  = 'dailyQuote_random';
+
+function getCustom() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+function saveCustom(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+
+// ── Date helpers ─────────────────────────────────────────────────────
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+function todayIndex() {
+  // deterministic daily quote from built-in list
+  const d = new Date();
+  const seed = d.getFullYear() * 10000 + (d.getMonth()+1) * 100 + d.getDate();
+  return seed % BUILTIN.length;
+}
+function formatDate(d) {
+  const days = ['日','一','二','三','四','五','六'];
+  return `${d.getMonth()+1}/${d.getDate()} 週${days[d.getDay()]}`;
+}
+
+// ── UI state ─────────────────────────────────────────────────────────
+let currentEnergy = 'pos';
+let activeTab = 'builtin';
+let currentRandom = null; // { text, energy, author }
+
+function getAllQuotes() { return [...BUILTIN, ...getCustom()]; }
+
+// ── Display quote ────────────────────────────────────────────────────
+function displayQuote(q) {
+  const badge  = document.getElementById('energyBadge');
+  const text   = document.getElementById('quoteText');
+  const author = document.getElementById('quoteAuthor');
+  const card   = document.getElementById('mainCard');
+
+  // Re-trigger animation
+  card.style.animation = 'none';
+  card.offsetHeight; // reflow
+  card.style.animation = '';
+
+  badge.className = 'energy-badge ' + (q.energy === 'pos' ? 'pos' : 'neg');
+  badge.innerHTML = (q.energy === 'pos' ? '&#9728;&#xFE0F; 正能量' : '&#127783;&#xFE0F; 負能量');
+  text.textContent = q.text;
+  author.textContent = q.author ? '— ' + q.author : '';
+}
+
+function showToday() {
+  const saved = localStorage.getItem(RANDOM_KEY);
+  const todayKey = todayStr();
+  let todayRandom = null;
+  if (saved) {
+    const obj = JSON.parse(saved);
+    if (obj.date === todayKey) todayRandom = obj.quote;
+  }
+  const q = todayRandom || BUILTIN[todayIndex()];
+  currentRandom = null;
+  displayQuote(q);
+}
+
+function drawRandom() {
+  const all = getAllQuotes();
+  const q = all[Math.floor(Math.random() * all.length)];
+  currentRandom = q;
+  // Save as today's random so it persists if user refreshes
+  localStorage.setItem(RANDOM_KEY, JSON.stringify({ date: todayStr(), quote: q }));
+  displayQuote(q);
+  showToast('已重新抽取一句！');
+}
+
+// ── Lists ────────────────────────────────────────────────────────────
+function renderLists() {
+  renderBuiltin();
+  renderCustom();
+}
+
+function quoteItemHTML(q, index, isCustom) {
+  const barClass = q.energy === 'pos' ? 'bar-pos' : 'bar-neg';
+  const label    = q.energy === 'pos' ? '正能量' : '負能量';
+  const del = isCustom
+    ? `<button class="btn-delete" onclick="deleteCustom(${index})" title="刪除">✕</button>`
+    : '';
+  return `
+    <div class="quote-item">
+      <div class="quote-item-bar ${barClass}"></div>
+      <div class="quote-item-body">
+        <div class="quote-item-text">${escHtml(q.text)}</div>
+        <div class="quote-item-meta">${label}${q.author ? ' · ' + escHtml(q.author) : ''}</div>
+      </div>
+      ${del}
+    </div>`;
+}
+
+function renderBuiltin() {
+  document.getElementById('builtinList').innerHTML =
+    BUILTIN.map((q, i) => quoteItemHTML(q, i, false)).join('');
+}
+
+function renderCustom() {
+  const custom = getCustom();
+  const list = document.getElementById('customList');
+  if (custom.length === 0) {
+    list.innerHTML = '<div class="empty-state">還沒有自訂句子<br>點「新增句子」加入你的語錄吧 ✨</div>';
+  } else {
+    list.innerHTML = custom.map((q, i) => quoteItemHTML(q, i, true)).join('');
+  }
+}
+
+function deleteCustom(index) {
+  const custom = getCustom();
+  custom.splice(index, 1);
+  saveCustom(custom);
+  renderCustom();
+  showToast('已刪除');
+}
+
+// ── Add form ─────────────────────────────────────────────────────────
+function toggleForm() {
+  const form = document.getElementById('addForm');
+  form.classList.toggle('open');
+  if (form.classList.contains('open')) {
+    document.getElementById('newQuoteText').focus();
+    selectEnergy('pos');
+  }
+}
+
+function selectEnergy(val) {
+  currentEnergy = val;
+  document.getElementById('togglePos').className = 'toggle-btn' + (val === 'pos' ? ' active-pos' : '');
+  document.getElementById('toggleNeg').className = 'toggle-btn' + (val === 'neg' ? ' active-neg' : '');
+}
+
+function saveQuote() {
+  const txt = document.getElementById('newQuoteText').value.trim();
+  if (!txt) { showToast('請輸入句子內容'); return; }
+  const custom = getCustom();
+  custom.unshift({ text: txt, energy: currentEnergy, author: '自訂' });
+  saveCustom(custom);
+  document.getElementById('newQuoteText').value = '';
+  toggleForm();
+  renderCustom();
+  switchTab('custom');
+  showToast('已新增句子 ✓');
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && name === 'builtin') || (i === 1 && name === 'custom'));
+  });
+  document.getElementById('panel-builtin').classList.toggle('active', name === 'builtin');
+  document.getElementById('panel-custom').classList.toggle('active', name === 'custom');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Escape html ───────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────
+(function init() {
+  document.getElementById('dateChip').textContent = formatDate(new Date());
+  showToday();
+  renderLists();
+})();
+</script>
+</body>
+</html>
